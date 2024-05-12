@@ -1,0 +1,78 @@
+@use 'variables' as vars;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  font-weight: normal;
+  font-family: vars.$font-family;
+  line-height: vars.$line-height;
+  transition: vars.$animation-duration;
+  font-display: swap;
+
+  @media (min-width: 320px) {
+    font-size: $font-size-s;
+  }
+  @media (min-width: 580px) {
+    font-size: $font-size-m;
+  }
+  @media (min-width: 1024px) {
+    font-size: $font-size-b;
+  }
+}
+
+body {
+  min-height: 100vh;
+  background: vars.$background-body;
+  transition:
+    color 1s,
+    background-color 1s;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: url('../assets/UI/Books Layout.webp');
+  background-repeat: repeat-y repeat-x;
+  background-size: contain;
+}
+
+nav {
+  z-index: 5;
+  background: vars.$navbar-color;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+p {
+  margin-top: 10px;
+  &::first-letter {
+    padding-left: 20px;
+  }
+}
+
+h1 {
+  font-weight: bold;
+}
+
+// Убрать стрелки в input number
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+// Dark mode
+@media (prefers-color-scheme: dark) {
+  body {
+    background-blend-mode: difference;
+  }
+}

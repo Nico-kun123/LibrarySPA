@@ -1,0 +1,15 @@
+@import './base.scss';
+
+a {
+  text-decoration: none;
+  transition: 0.4s;
+}
+
+@media (hover: hover) {
+  a:hover {
+    cursor: pointer;
+  }
+  button {
+    cursor: pointer;
+  }
+}
