@@ -7,6 +7,11 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
+      redirect: '/LibrarySPA'
+    },
+    {
+      path: '/LibrarySPA',
+      name: 'home_github_pages',
       component: HomeView
     },
     {
