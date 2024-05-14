@@ -6,6 +6,7 @@ import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/fire
 import recommend from '@/components/icons/recommend.vue'
 import booksIcon from '@/components/icons/books.vue'
 
+// components
 import BookComponent from '@/components/Book.vue'
 
 interface Book {
@@ -22,8 +23,7 @@ export default defineComponent({
   setup() {
     const recommendedBookRef = ref<Book | null>(null)
     const booksByYear = ref<{ [key: string]: Book[] }>({})
-
-    let loaded = ref(false)
+    const loaded = ref(false)
 
     /**
      * Получает рекомендованную книгу из базы данных.
@@ -47,13 +47,21 @@ export default defineComponent({
           .map((doc) => doc.data() as Book)
           .filter(
             (book) =>
-              book.year &&
-              book.year <= threeYearsAgo &&
-              (book.rating === undefined || (book.rating >= 0 && book.rating <= 10))
+              (!book.year || new Date().getFullYear() - book.year >= 3) &&
+              (!book.rating || (book.rating >= 0 && book.rating <= 10))
           )
-          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .sort((a, b) => b.rating - a.rating)
 
-        const recommendedBook = filteredBooks[Math.floor(Math.random() * filteredBooks.length)]
+        // Получаем книги с max рейтингом
+        const maxRating = Math.max(...filteredBooks.map((book) => book.rating))
+        const sortedBooks = filteredBooks.filter((book) => book.rating === maxRating)
+
+        // Выбираем одну случайную книгу из списка книг с максимальным рейтингом
+        const recommendedBook =
+          sortedBooks.length > 0
+            ? sortedBooks[Math.floor(Math.random() * sortedBooks.length)]
+            : null
+
         recommendedBookRef.value = recommendedBook
       } catch (error) {
         console.error('Не удалось получить рекомендованную книгу:', error)
@@ -70,29 +78,34 @@ export default defineComponent({
         const querySnapshot = await getDocs(booksCollection)
         const books: Book[] = querySnapshot.docs.map((doc) => doc.data() as Book)
 
-        // Находим уникальные года
-        const uniqueYears = Array.from(
-          new Set(
-            books.map((book) =>
-              !book.year || book.year === undefined ? 'Книги без указания года' : book.year
-            )
-          )
-        )
-
-        // Создаем объект для хранения книг по годам
-        const booksByYearObject: { [key: string]: Book[] } = {}
-
-        // Добавляем книгу в группу
-        uniqueYears.forEach((year) => {
-          booksByYearObject[year] = books.filter(
-            (book) => book.year === year || (year === 'Книги без указания года' && !book.year)
-          )
+        // Группируем книги по годам с известным годом и без указания года
+        const booksWithYear: { [key: number]: Book[] } = {}
+        const booksWithoutYear: Book[] = []
+        books.forEach((book) => {
+          if (book.year) {
+            if (!booksWithYear[book.year]) {
+              booksWithYear[book.year] = []
+            }
+            booksWithYear[book.year].push(book)
+          } else {
+            booksWithoutYear.push(book)
+          }
         })
 
-        // Присваиваем booksByYear значение отсортированного объекта книг по годам
-        booksByYear.value = booksByYearObject
+        // Сортируем группы книг по годам в порядке убывания
+        const sortedYears = Object.keys(booksWithYear).sort((a, b) => parseInt(b) - parseInt(a))
 
-        // Сортируем книги по названию
+        // Заполняем новый объект отсортированными книгами
+        const sortedBooksByYear: { [key: string]: Book[] } = {}
+        sortedYears.forEach((year) => {
+          sortedBooksByYear[+year] = booksWithYear[+year]
+        })
+
+        // Добавляем группу для книг без указания года
+        sortedBooksByYear[0] = booksWithoutYear
+        booksByYear.value = sortedBooksByYear
+
+        // Сортируем книги в группах по названию
         Object.values(booksByYear.value).forEach((books) => {
           books.sort((a, b) => a.name.localeCompare(b.name))
         })
@@ -148,6 +161,13 @@ export default defineComponent({
     recommend,
     booksIcon,
     BookComponent
+  },
+
+  computed: {
+    reversedBooksByYear() {
+      // перевернули объект booksByYear
+      return Object.entries(this.booksByYear).reverse()
+    }
   }
 })
 </script>
@@ -184,14 +204,17 @@ export default defineComponent({
         <p v-if="!loaded">Загрузка...</p>
         <div
           class="mainfield__bookfield__book-group"
-          v-else
-          v-for="(books, year) in booksByYear"
-          :key="year"
+          v-if="loaded"
+          v-for="(books, id) in reversedBooksByYear"
+          :key="id"
         >
-          <h2>{{ year }}</h2>
+          <h2 v-if="+books[0] === 0">Книги без указания года</h2>
+          <h2 v-else>
+            {{ books[0] }}
+          </h2>
+
           <BookComponent
-            v-for="book in books"
-            :key="book?.name"
+            v-for="book in books[1]"
             :name="book?.name"
             :authors="book?.authors"
             :year="book?.year"
