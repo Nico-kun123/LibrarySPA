@@ -10,10 +10,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build-only": "vite build",
-    "preview": "npm run build-only & vite preview",
+    "build-only": "npm run format & vite build",
+    "preview": "npm run format & npm run build-only & vite preview",
     "format": "prettier --write src/",
-    "deploy": "npm run build-only && gh-pages -d dist",
+    "deploy": "npm run format & npm run build-only && gh-pages -d dist",
     "build": "run-p type-check \"build-only {@}\" --",
     "type-check": "vue-tsc --build --force"
   },
